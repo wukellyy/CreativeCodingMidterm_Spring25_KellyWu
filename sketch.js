@@ -61,6 +61,8 @@ let shyShape;
 let approachingShape;
 let actNum = 1;
 let isNextToShy = false;
+let pauseStartTime = 0;
+let pauseDuration = 3000;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -74,9 +76,21 @@ function draw() {
   background(240, 245, 255); // Soft pastel blue
 
   // Handle animation cycles
-  if (actNum == 1) {
+  if (actNum === 1) {
     act1(shyShape, approachingShape);
+  } else if (actNum === 2) {
+    act2(shyShape, approachingShape);
   }
+}
+
+function act2(shyShape, approachingShape) {
+  approachingShape.moveAway(shyShape);
+  shyShape.update(approachingShape);
+
+  shyShape.display();
+  approachingShape.display();
+
+  actNum = 2;
 }
 
 function act1(shyShape, approachingShape) {
@@ -85,6 +99,14 @@ function act1(shyShape, approachingShape) {
 
   shyShape.display();
   approachingShape.display();
+
+  if (isNextToShy && pauseStartTime === 0) {
+    pauseStartTime = millis(); // Start the pause timer
+  }
+
+  if (isNextToShy && millis() - pauseStartTime > pauseDuration) {
+    actNum = 2;
+  }
 }
 
 class ShyShape {
@@ -160,7 +182,8 @@ class ApproachingShape {
   }
 
   display() {
-    fill(255, 150, 150);
+    fill(255, 110, 110); // Red
+
     noStroke();
     rect(this.x, this.y, this.size, this.size);
   }
