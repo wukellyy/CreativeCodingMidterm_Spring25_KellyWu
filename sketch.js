@@ -1,52 +1,167 @@
-let shyShapes = [];
+// let shyShapes = [];
+
+// function setup() {
+//   createCanvas(windowWidth, windowHeight);
+
+//   // Create multiple shy shapes
+//   for (let i = 0; i < 50; i++) {
+//     shyShapes.push(new ShyShape(random(width), random(height)));
+//   }
+// }
+
+// function draw() {
+//   background(240, 245, 255); // Soft pastel blue
+
+//   for (let shape of shyShapes) {
+//     shape.update();
+//     shape.display();
+//   }
+// }
+
+// class ShyShape {
+//   constructor(x, y) {
+//     this.x = x;
+//     this.y = y;
+//     this.size = random(10, 30);
+//     this.opacity = 255;
+//   }
+
+//   update() {
+//     // Calculate the distance between cursor and shy shape
+//     let d = dist(mouseX, mouseY, this.x, this.y);
+
+//     // If cursor is close, shy away (reduce size and decrease opacity)
+//     if (d < 60) {
+//       if (this.size > 5) {
+//         this.size -= 0.5;
+//       }
+//       if (this.opacity > 50) {
+//         this.opacity -= 5;
+//       }
+//     }
+//     // If cursor is far, slowly come out of shell (grow and increase opacity)
+//     else {
+//       if (this.size < 30) {
+//         this.size += 0.2;
+//       }
+//       if (this.opacity < 255) {
+//         this.opacity += 2;
+//       }
+//     }
+//   }
+
+//   display() {
+//     fill(150, 180, 255, this.opacity); // Soft blue, transparent
+//     noStroke();
+//     ellipse(this.x, this.y, this.size);
+//   }
+// }
+
+let shyShape;
+let approachingShape;
+let actNum = 1;
+let isNextToShy = false;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  rectMode(CENTER);
 
-  // Create multiple shy shapes
-  for (let i = 0; i < 50; i++) {
-    shyShapes.push(new ShyShape(random(width), random(height)));
-  }
+  shyShape = new ShyShape(width / 2, height / 2);
+  approachingShape = new ApproachingShape(-50, height / 2);
 }
 
 function draw() {
   background(240, 245, 255); // Soft pastel blue
 
-  for (let shape of shyShapes) {
-    shape.update();
-    shape.display();
+  // Handle animation cycles
+  if (actNum == 1) {
+    act1(shyShape, approachingShape);
   }
+}
+
+function act1(shyShape, approachingShape) {
+  approachingShape.moveToward(shyShape);
+  shyShape.update(approachingShape);
+
+  shyShape.display();
+  approachingShape.display();
 }
 
 class ShyShape {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.size = random(10, 30);
+    this.size = 50;
     this.opacity = 255;
   }
 
-  update() {
-    // Calculate the distance between cursor and shy shape
-    let dx = mouseX - this.x;
-    let dy = mouseY - this.y;
-    let dSquared = dx * dx + dy * dy;
+  update(other) {
+    let d = dist(other.x, other.y, this.x, this.y);
 
-    // If cursor is close, shy away (reduce size and decrease opacity)
-    if (dSquared < 3600) {
-      if (this.size > 5) this.size -= 0.5;
-      if (this.opacity > 50) this.opacity -= 5;
+    // During last act, shy shape is comfortable with this approaching shape
+    // so it remains in a normal state
+    if (actNum == 4) {
+      this.normalState();
     }
-    // If cursor is far, slowly come out of shell (grow and increase opacity)
+    // If approaching shape gets close, shy shape shinks and decrease its opacity
+    else if (d < 80) {
+      if (this.size > 20) {
+        this.size -= 0.5;
+      }
+      if (this.opacity > 50) {
+        this.opacity -= 5;
+      }
+    }
+    // If approaching shape is away, shy shape grows and increase its opacity
     else {
-      if (this.size < 30) this.size += 0.2;
-      if (this.opacity < 255) this.opacity += 2;
+      if (this.size < 50) {
+        this.size += 0.2;
+      }
+      if (this.opacity < 255) {
+        this.opacity += 2;
+      }
+    }
+  }
+
+  normalState() {
+    this.size = 50;
+    this.opacity = 255;
+  }
+
+  display() {
+    fill(150, 180, 255, this.opacity);
+    noStroke();
+    ellipse(this.x, this.y, this.size);
+  }
+}
+
+class ApproachingShape {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = 50;
+    this.speed = 2;
+  }
+
+  moveToward(target) {
+    if (this.x < target.x - 70) {
+      this.x += this.speed;
+    } else {
+      isNextToShy = true;
+    }
+  }
+
+  moveAway() {
+    if (this.x > -50) {
+      this.x -= this.speed;
+    } else {
+      isNextToShy = false;
     }
   }
 
   display() {
-    fill(150, 180, 255, this.opacity); // Soft blue, transparent
+    fill(255, 150, 150);
     noStroke();
-    ellipse(this.x, this.y, this.size);
+    rect(this.x, this.y, this.size, this.size);
   }
 }
