@@ -76,6 +76,8 @@ function setup() {
 function draw() {
   background(240, 245, 255); // Pastel blue
 
+  console.log("comfortLevel:", approachingShape.comfortLevel);
+
   // Handle animation cycles
   if (actNum === 1) {
     console.log("act 1 now");
@@ -89,6 +91,9 @@ function draw() {
     console.log("act 4 now");
   } else if (actNum === 4) {
     moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 5) {
+    console.log("act 5 now");
+    moveTowardState(shyShape, approachingShape);
   }
 }
 
@@ -108,7 +113,7 @@ function moveAwayState(shyShape, approachingShape) {
     if (actNum === 2) {
       actNum = 3;
     } else if (actNum === 4) {
-      actNum = 4;
+      actNum = 5;
     }
   }
 }
@@ -130,6 +135,8 @@ function moveTowardState(shyShape, approachingShape) {
       actNum = 2;
     } else if (actNum === 3) {
       actNum = 4;
+    } else if (actNum === 5) {
+      actNum = 5;
     }
   }
 }
@@ -140,26 +147,48 @@ class ShyShape {
     this.y = y;
     this.size = 50;
     this.opacity = 255;
-    this.comfortLevel = 0;
+    this.shrinkStartTime = null;
   }
 
   update(other) {
     let d = dist(other.x, other.y, this.x, this.y);
 
     // If shy shape is comfortable with this approaching shape, it remains in a normal state
-    if (this.comfortLevel >= 3) {
+    if (other.comfortLevel >= 4) {
       this.normalState();
     }
     // If approaching shape gets close, shy shape shinks and decrease its opacity
     else if (d < 80) {
-      if (this.comfortLevel === 2 && this.size > 30) {
-        this.size -= 0.5;
-      } else if (this.size > 20) {
-        this.size -= 0.5;
-      }
+      if (other.comfortLevel === 3) {
+        if (!this.shrinkStartTime) {
+          this.shrinkStartTime = millis();
+        }
+        // Shrink a bit then go back to normal
+        if (millis() - this.shrinkStartTime < 500) {
+          if (this.size > 20) {
+            this.size -= 0.2;
+          }
 
-      if (this.opacity > 50) {
-        this.opacity -= 5;
+          if (this.opacity < 255) {
+            this.opacity -= 5;
+          }
+        } else {
+          if (this.size < 50) {
+            this.size += 0.2;
+          }
+
+          if (this.opacity < 255) {
+            this.opacity += 5;
+          }
+        }
+      } else {
+        if (this.size > 20) {
+          this.size -= 0.5;
+        }
+
+        if (this.opacity > 50) {
+          this.opacity -= 5;
+        }
       }
     }
     // If approaching shape is away, shy shape grows and increase its opacity
@@ -191,16 +220,25 @@ class ApproachingShape {
     this.x = x;
     this.y = y;
     this.size = 50;
-    this.speed = 2;
+    // this.speed = 2;
+    this.speed = 5;
+
+    this.comfortLevel = 0;
+    this.hasIncremented = false;
   }
 
   moveToward(target) {
     console.log("moving towards shy shape");
     if (this.x < target.x - 70) {
       this.x += this.speed;
+      this.hasIncremented = false;
     } else {
       isNextToShy = true;
-      this.comfortLevel += 1;
+
+      if (!this.hasIncremented) {
+        this.comfortLevel += 1;
+        this.hasIncremented = true;
+      }
     }
   }
 
