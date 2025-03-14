@@ -62,7 +62,8 @@ let approachingShape;
 let actNum = 1;
 let isNextToShy = false;
 let pauseStartTime = 0;
-let pauseDuration = 3000;
+let pauseDurationNear = 3000;
+let pauseDurationAway = 2000;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -77,11 +78,17 @@ function draw() {
 
   // Handle animation cycles
   if (actNum === 1) {
+    console.log("act 1 now");
     moveTowardState(shyShape, approachingShape);
   } else if (actNum === 2) {
+    console.log("act 2 now");
     moveAwayState(shyShape, approachingShape);
   } else if (actNum === 3) {
+    console.log("act 3 now");
     moveTowardState(shyShape, approachingShape);
+    console.log("act 4 now");
+  } else if (actNum === 4) {
+    moveAwayState(shyShape, approachingShape);
   }
 }
 
@@ -92,13 +99,17 @@ function moveAwayState(shyShape, approachingShape) {
   shyShape.display();
   approachingShape.display();
 
-  if (isNextToShy) {
+  if (isNextToShy && pauseStartTime === 0) {
     pauseStartTime = millis(); // Start the pause timer
   }
 
-  if (!isNextToShy && millis() - pauseStartTime > pauseDuration) {
-    console.log("act 3 now");
-    actNum = 3;
+  if (!isNextToShy && millis() - pauseStartTime > pauseDurationAway) {
+    pauseStartTime = 0; // Reset timer
+    if (actNum === 2) {
+      actNum = 3;
+    } else if (actNum === 4) {
+      actNum = 4;
+    }
   }
 }
 
@@ -113,13 +124,12 @@ function moveTowardState(shyShape, approachingShape) {
     pauseStartTime = millis(); // Start the pause timer
   }
 
-  if (isNextToShy && millis() - pauseStartTime > pauseDuration) {
+  if (isNextToShy && millis() - pauseStartTime > pauseDurationNear) {
+    pauseStartTime = 0; // Reset timer
     if (actNum === 1) {
-      console.log("act 2 now");
       actNum = 2;
     } else if (actNum === 3) {
-      // console.log("act 4 now");
-      actNum = 3;
+      actNum = 4;
     }
   }
 }
@@ -205,7 +215,6 @@ class ApproachingShape {
 
   display() {
     fill(255, 110, 110); // Red
-
     noStroke();
     rect(this.x, this.y, this.size, this.size);
   }
