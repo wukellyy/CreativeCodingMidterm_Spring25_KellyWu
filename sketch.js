@@ -73,27 +73,36 @@ function setup() {
 }
 
 function draw() {
-  background(240, 245, 255); // Soft pastel blue
+  background(240, 245, 255); // Pastel blue
 
   // Handle animation cycles
   if (actNum === 1) {
-    act1(shyShape, approachingShape);
+    moveTowardState(shyShape, approachingShape);
   } else if (actNum === 2) {
-    act2(shyShape, approachingShape);
+    moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 3) {
+    moveTowardState(shyShape, approachingShape);
   }
 }
 
-function act2(shyShape, approachingShape) {
+function moveAwayState(shyShape, approachingShape) {
   approachingShape.moveAway(shyShape);
   shyShape.update(approachingShape);
 
   shyShape.display();
   approachingShape.display();
 
-  actNum = 2;
+  if (isNextToShy) {
+    pauseStartTime = millis(); // Start the pause timer
+  }
+
+  if (!isNextToShy && millis() - pauseStartTime > pauseDuration) {
+    console.log("act 3 now");
+    actNum = 3;
+  }
 }
 
-function act1(shyShape, approachingShape) {
+function moveTowardState(shyShape, approachingShape) {
   approachingShape.moveToward(shyShape);
   shyShape.update(approachingShape);
 
@@ -105,7 +114,13 @@ function act1(shyShape, approachingShape) {
   }
 
   if (isNextToShy && millis() - pauseStartTime > pauseDuration) {
-    actNum = 2;
+    if (actNum === 1) {
+      console.log("act 2 now");
+      actNum = 2;
+    } else if (actNum === 3) {
+      // console.log("act 4 now");
+      actNum = 3;
+    }
   }
 }
 
@@ -115,21 +130,24 @@ class ShyShape {
     this.y = y;
     this.size = 50;
     this.opacity = 255;
+    this.comfortLevel = 0;
   }
 
   update(other) {
     let d = dist(other.x, other.y, this.x, this.y);
 
-    // During last act, shy shape is comfortable with this approaching shape
-    // so it remains in a normal state
-    if (actNum == 4) {
+    // If shy shape is comfortable with this approaching shape, it remains in a normal state
+    if (this.comfortLevel >= 3) {
       this.normalState();
     }
     // If approaching shape gets close, shy shape shinks and decrease its opacity
     else if (d < 80) {
-      if (this.size > 20) {
+      if (this.comfortLevel === 2 && this.size > 30) {
+        this.size -= 0.5;
+      } else if (this.size > 20) {
         this.size -= 0.5;
       }
+
       if (this.opacity > 50) {
         this.opacity -= 5;
       }
@@ -139,6 +157,7 @@ class ShyShape {
       if (this.size < 50) {
         this.size += 0.2;
       }
+
       if (this.opacity < 255) {
         this.opacity += 2;
       }
@@ -151,7 +170,7 @@ class ShyShape {
   }
 
   display() {
-    fill(150, 180, 255, this.opacity);
+    fill(150, 180, 255, this.opacity); // Light blue
     noStroke();
     ellipse(this.x, this.y, this.size);
   }
@@ -166,14 +185,17 @@ class ApproachingShape {
   }
 
   moveToward(target) {
+    console.log("moving towards shy shape");
     if (this.x < target.x - 70) {
       this.x += this.speed;
     } else {
       isNextToShy = true;
+      this.comfortLevel += 1;
     }
   }
 
   moveAway() {
+    console.log("moving away shy shape");
     if (this.x > -50) {
       this.x -= this.speed;
     } else {
