@@ -1,62 +1,7 @@
-// let shyShapes = [];
+// Scene 1 variables
+let shyShapes = [];
 
-// function setup() {
-//   createCanvas(windowWidth, windowHeight);
-
-//   // Create multiple shy shapes
-//   for (let i = 0; i < 50; i++) {
-//     shyShapes.push(new ShyShape(random(width), random(height)));
-//   }
-// }
-
-// function draw() {
-//   background(240, 245, 255); // Soft pastel blue
-
-//   for (let shape of shyShapes) {
-//     shape.update();
-//     shape.display();
-//   }
-// }
-
-// class ShyShape {
-//   constructor(x, y) {
-//     this.x = x;
-//     this.y = y;
-//     this.size = random(10, 30);
-//     this.opacity = 255;
-//   }
-
-//   update() {
-//     // Calculate the distance between cursor and shy shape
-//     let d = dist(mouseX, mouseY, this.x, this.y);
-
-//     // If cursor is close, shy away (reduce size and decrease opacity)
-//     if (d < 60) {
-//       if (this.size > 5) {
-//         this.size -= 0.5;
-//       }
-//       if (this.opacity > 50) {
-//         this.opacity -= 5;
-//       }
-//     }
-//     // If cursor is far, slowly come out of shell (grow and increase opacity)
-//     else {
-//       if (this.size < 30) {
-//         this.size += 0.2;
-//       }
-//       if (this.opacity < 255) {
-//         this.opacity += 2;
-//       }
-//     }
-//   }
-
-//   display() {
-//     fill(150, 180, 255, this.opacity); // Soft blue, transparent
-//     noStroke();
-//     ellipse(this.x, this.y, this.size);
-//   }
-// }
-
+// Scene 2 variables
 let shyShape;
 let approachingShape;
 let actNum = 1;
@@ -65,41 +10,144 @@ let pauseStartTime = 0;
 let pauseDurationNear = 3000;
 let pauseDurationAway = 2000;
 
+// Scene control variables
+let curr_scene = 1;
+let sceneChangeTime = 0;
+let sceneDuration = { scene1: 20000, scene2: 2000 };
+let scene_running = false;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   rectMode(CENTER);
-
-  shyShape = new ShyShape(width / 2, height / 2);
-  approachingShape = new ApproachingShape(-50, height / 2);
 }
 
 function draw() {
-  background(240, 245, 255); // Pastel blue
+  // Initializing variables for the scene
+  if (!scene_running) {
+    if (curr_scene === 1) {
+      // Create multiple shy shapes
+      for (let i = 0; i < 50; i++) {
+        shyShapes.push(new ShyShapeScene1(random(width), random(height)));
+      }
+      sceneChangeTime = millis();
+    } else {
+      shyShape = new ShyShapeScene2(width / 2, height / 2);
+      approachingShape = new ApproachingShape(-50, height / 2);
+      sceneChangeTime = millis();
+    }
 
-  console.log("comfortLevel:", approachingShape.comfortLevel);
+    scene_running = true;
+  }
 
-  // Handle animation cycles
-  if (actNum === 1) {
-    console.log("act 1 now");
-    moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 2) {
-    console.log("act 2 now");
-    moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 3) {
-    console.log("act 3 now");
-    moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 4) {
-    console.log("act 4 now");
-    moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 5) {
-    console.log("act 5 now");
-    moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 6) {
-    console.log("act 6 now");
-    moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 7) {
-    console.log("act 7 now");
-    moveTowardState(shyShape, approachingShape);
+  if (curr_scene === 1) {
+    console.log("in scene 1");
+
+    background(240, 245, 255); // Pastel blue
+
+    for (let shape of shyShapes) {
+      shape.update();
+      shape.display();
+    }
+
+    // Switch to Scene 2
+    if (millis() - sceneChangeTime > sceneDuration.scene1) {
+      curr_scene = 2;
+      scene_running = false;
+
+      // Reset variables
+      shyShapes = [];
+      sceneChangeTime = 0;
+
+      console.log("switching to scene 2");
+    }
+  } else {
+    console.log("in scene 2");
+
+    if (actNum < 9) {
+      background(240, 245, 255); // Pastel blue
+    }
+
+    // Handle animation cycles
+    if (actNum === 1) {
+      console.log("act 1 now");
+      moveTowardState(shyShape, approachingShape);
+    } else if (actNum === 2) {
+      console.log("act 2 now");
+      moveAwayState(shyShape, approachingShape);
+    } else if (actNum === 3) {
+      console.log("act 3 now");
+      moveTowardState(shyShape, approachingShape);
+    } else if (actNum === 4) {
+      console.log("act 4 now");
+      moveAwayState(shyShape, approachingShape);
+    } else if (actNum === 5) {
+      console.log("act 5 now");
+      moveTowardState(shyShape, approachingShape);
+    } else if (actNum === 6) {
+      console.log("act 6 now");
+      moveAwayState(shyShape, approachingShape);
+    } else if (actNum === 7) {
+      console.log("act 7 now");
+      moveTowardState(shyShape, approachingShape);
+    }
+
+    // Start scene change timer after act 7 is finished
+    if (actNum === 8 && millis() - pauseStartTime > pauseDurationNear) {
+      sceneChangeTime = millis();
+      actNum = 9;
+    }
+
+    // Switch to Scene 1 after Scene 2 duration
+    if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
+      curr_scene = 1;
+      scene_running = false;
+
+      // Reset variables
+      actNum = 1;
+      isNextToShy = false;
+      sceneChangeTime = 0;
+
+      console.log("switching to scene 1");
+    }
+  }
+}
+
+class ShyShapeScene1 {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = random(10, 30);
+    this.opacity = 255;
+  }
+
+  update() {
+    // Calculate the distance between cursor and shy shape
+    let d = dist(mouseX, mouseY, this.x, this.y);
+
+    // If cursor is close, shy away (reduce size and decrease opacity)
+    if (d < 40) {
+      if (this.size > 5) {
+        this.size -= 0.5;
+      }
+      if (this.opacity > 50) {
+        this.opacity -= 5;
+      }
+    }
+    // If cursor is far, slowly come out of shell (grow and increase opacity)
+    else {
+      if (this.size < 30) {
+        this.size += 0.2;
+      }
+      if (this.opacity < 255) {
+        this.opacity += 2;
+      }
+    }
+  }
+
+  display() {
+    fill(150, 180, 255, this.opacity); // Soft blue
+    noStroke();
+    ellipse(this.x, this.y, this.size);
   }
 }
 
@@ -146,12 +194,12 @@ function moveTowardState(shyShape, approachingShape) {
     } else if (actNum === 5) {
       actNum = 6;
     } else if (actNum === 7) {
-      actNum = 7;
+      actNum = 8;
     }
   }
 }
 
-class ShyShape {
+class ShyShapeScene2 {
   constructor(x, y) {
     this.x = x;
     this.y = y;
@@ -219,7 +267,7 @@ class ShyShape {
   }
 
   display() {
-    fill(150, 180, 255, this.opacity); // Light blue
+    fill(150, 180, 255, this.opacity); // Soft blue
     noStroke();
     ellipse(this.x, this.y, this.size);
   }
