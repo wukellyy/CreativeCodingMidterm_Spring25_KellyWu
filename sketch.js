@@ -88,11 +88,17 @@ function draw() {
   } else if (actNum === 3) {
     console.log("act 3 now");
     moveTowardState(shyShape, approachingShape);
-    console.log("act 4 now");
   } else if (actNum === 4) {
+    console.log("act 4 now");
     moveAwayState(shyShape, approachingShape);
   } else if (actNum === 5) {
     console.log("act 5 now");
+    moveTowardState(shyShape, approachingShape);
+  } else if (actNum === 6) {
+    console.log("act 6 now");
+    moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 7) {
+    console.log("act 7 now");
     moveTowardState(shyShape, approachingShape);
   }
 }
@@ -114,6 +120,8 @@ function moveAwayState(shyShape, approachingShape) {
       actNum = 3;
     } else if (actNum === 4) {
       actNum = 5;
+    } else if (actNum === 6) {
+      actNum = 7;
     }
   }
 }
@@ -136,7 +144,9 @@ function moveTowardState(shyShape, approachingShape) {
     } else if (actNum === 3) {
       actNum = 4;
     } else if (actNum === 5) {
-      actNum = 5;
+      actNum = 6;
+    } else if (actNum === 7) {
+      actNum = 7;
     }
   }
 }
@@ -164,7 +174,7 @@ class ShyShape {
           this.shrinkStartTime = millis();
         }
         // Shrink a bit then go back to normal
-        if (millis() - this.shrinkStartTime < 500) {
+        if (millis() - this.shrinkStartTime < 400) {
           if (this.size > 20) {
             this.size -= 0.2;
           }
@@ -220,9 +230,7 @@ class ApproachingShape {
     this.x = x;
     this.y = y;
     this.size = 50;
-    // this.speed = 2;
-    this.speed = 5;
-
+    this.speed = 3;
     this.comfortLevel = 0;
     this.hasIncremented = false;
   }
