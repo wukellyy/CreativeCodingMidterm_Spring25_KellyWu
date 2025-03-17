@@ -8,12 +8,12 @@ let actNum = 1;
 let isNextToShy = false;
 let pauseStartTime = 0;
 let pauseDurationNear = 3000;
-let pauseDurationAway = 2000;
+let pauseDurationAway = 3000;
 
 // Scene control variables
 let curr_scene = 1;
 let sceneChangeTime = 0;
-let sceneDuration = { scene1: 20000, scene2: 2000 };
+let sceneDuration = { scene1: 15000, scene2: 2000 };
 let scene_running = false;
 
 function setup() {
@@ -32,7 +32,7 @@ function draw() {
       sceneChangeTime = millis();
     } else {
       shyShape = new ShyShapeScene2(width / 2, height / 2);
-      approachingShape = new ApproachingShape(-50, height / 2);
+      approachingShape = new ApproachingShape(-50, height / 2, [255, 110, 110]);
       sceneChangeTime = millis();
     }
 
@@ -206,58 +206,72 @@ class ShyShapeScene2 {
     this.size = 50;
     this.opacity = 255;
     this.shrinkStartTime = null;
+
+    // Jump variables
+    this.jumpOffset = 0;
+    this.hasJumped = false;
+    this.jumpingUp = false;
   }
 
   update(other) {
     let d = dist(other.x, other.y, this.x, this.y);
+    console.log("comfortLevel:", other.comfortLevel);
+    console.log("this.hasJumped:", this.hasJumped);
 
     // If shy shape is comfortable with this approaching shape, it remains in a normal state
     if (other.comfortLevel >= 4) {
       this.normalState();
+      if (!this.hasJumped) {
+        this.jumpingUp = true;
+        this.hasJumped = true;
+      }
     }
     // If approaching shape gets close, shy shape shinks and decrease its opacity
+    // The amount will depend on comfort level
     else if (d < 80) {
       if (other.comfortLevel === 3) {
         if (!this.shrinkStartTime) {
           this.shrinkStartTime = millis();
         }
+
         // Shrink a bit then go back to normal
         if (millis() - this.shrinkStartTime < 400) {
-          if (this.size > 20) {
-            this.size -= 0.2;
-          }
-
-          if (this.opacity < 255) {
-            this.opacity -= 5;
-          }
+          if (this.size > 20) this.size -= 0.2;
+          if (this.opacity > 50) this.opacity -= 5;
         } else {
-          if (this.size < 50) {
-            this.size += 0.2;
-          }
+          if (this.size < 50) this.size += 0.2;
+          if (this.opacity < 255) this.opacity += 5;
 
-          if (this.opacity < 255) {
-            this.opacity += 5;
+          // Jump when returning to normal
+          if (!this.hasJumped) {
+            this.jumpingUp = true;
+            this.hasJumped = true;
           }
         }
       } else {
-        if (this.size > 20) {
-          this.size -= 0.5;
-        }
-
-        if (this.opacity > 50) {
-          this.opacity -= 5;
-        }
+        if (this.size > 20) this.size -= 0.5;
+        if (this.opacity > 50) this.opacity -= 5;
       }
     }
     // If approaching shape is away, shy shape grows and increase its opacity
     else {
-      if (this.size < 50) {
-        this.size += 0.2;
-      }
+      if (this.size < 50) this.size += 0.2;
+      if (this.opacity < 255) this.opacity += 2;
+    }
 
-      if (this.opacity < 255) {
-        this.opacity += 2;
+    // Handle Jump Animation
+    if (this.jumpingUp) {
+      this.jumpOffset -= 2;
+      if (this.jumpOffset <= -15) {
+        this.jumpingUp = false;
       }
+    } else if (this.jumpOffset < 0) {
+      this.jumpOffset += 2;
+    }
+
+    if (isNextToShy === false) {
+      console.log("is next to shy");
+      this.hasJumped = false;
     }
   }
 
@@ -269,47 +283,72 @@ class ShyShapeScene2 {
   display() {
     fill(150, 180, 255, this.opacity); // Soft blue
     noStroke();
-    ellipse(this.x, this.y, this.size);
+    ellipse(this.x, this.y + this.jumpOffset, this.size);
   }
 }
 
 class ApproachingShape {
-  constructor(x, y) {
+  constructor(x, y, color) {
     this.x = x;
     this.y = y;
     this.size = 50;
     this.speed = 3;
     this.comfortLevel = 0;
     this.hasIncremented = false;
+    this.color = color;
+
+    // Jump variables
+    this.jumpOffset = 0;
+    this.hasJumped = false;
+    this.jumpingUp = false;
   }
 
   moveToward(target) {
     console.log("moving towards shy shape");
+
     if (this.x < target.x - 70) {
       this.x += this.speed;
       this.hasIncremented = false;
     } else {
       isNextToShy = true;
 
+      if (!this.hasJumped) {
+        this.jumpingUp = true;
+        this.hasJumped = true;
+      }
+
       if (!this.hasIncremented) {
         this.comfortLevel += 1;
         this.hasIncremented = true;
       }
     }
+
+    // Handle jump animation
+    if (this.jumpingUp) {
+      this.jumpOffset -= 2;
+      if (this.jumpOffset <= -15) {
+        this.jumpingUp = false;
+      }
+    } else if (this.jumpOffset < 0) {
+      this.jumpOffset += 2;
+    }
   }
 
   moveAway() {
     console.log("moving away shy shape");
+
     if (this.x > -50) {
       this.x -= this.speed;
+      this.hasJumped = false; // Reset jump trigger when moving away
+      this.jumpOffset = 0; // Reset jump position
     } else {
       isNextToShy = false;
     }
   }
 
   display() {
-    fill(255, 110, 110); // Red
+    fill(this.color);
     noStroke();
-    rect(this.x, this.y, this.size, this.size);
+    rect(this.x, this.y + this.jumpOffset, this.size, this.size);
   }
 }
