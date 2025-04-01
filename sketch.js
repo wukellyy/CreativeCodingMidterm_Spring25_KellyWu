@@ -21,229 +21,267 @@ let peekDelay = 3500;
 let isPeeking = false;
 
 // Scene control variables
-let curr_scene = 1;
+let currScene = 1;
 let sceneChangeTime = 0;
 let sceneDuration = { scene1: 15000, scene2: 2000, scene3: 60000 };
-let scene_running = false;
+let sceneRunning = false;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
-  // Initializing variables for the scene
-  if (!scene_running) {
-    rectMode(CENTER);
-    if (curr_scene === 1) {
-      // Create multiple shy shapes
-      for (let i = 0; i < 50; i++) {
-        shyShapes.push(new ShyShapeScene1(random(width), random(height)));
-      }
-      sceneChangeTime = millis();
-    } else if (curr_scene === 2) {
-      shyShape = new ShyShapeScene2(width / 2, height / 2);
-      approachingShape = new ApproachingShape(-50, height / 2, [255, 110, 110]);
-      sceneChangeTime = millis();
-    } else if (curr_scene === 3) {
-      rectMode(CORNER);
-      xPos = windowWidth / 2;
-      sceneChangeTime = millis();
-    }
-
-    scene_running = true;
+  if (!sceneRunning) {
+    initializeScene();
   }
 
-  if (curr_scene === 1) {
-    console.log("in scene 1");
+  if (currScene == 1) {
+    drawScene1();
+  } else if (currScene == 2) {
+    drawScene2();
+  } else if (currScene == 3) {
+    drawScene3();
+  }
+}
 
+function initializeScene() {
+  // Handle initialization for the running scene
+  rectMode(CENTER);
+  if (currScene === 1) {
+    // Create multiple shy shapes
+    for (let i = 0; i < 50; i++) {
+      shyShapes.push(new ShyShapeScene1(random(width), random(height)));
+    }
+    sceneChangeTime = millis();
+  } else if (currScene === 2) {
+    shyShape = new ShyShapeScene2(width / 2, height / 2);
+    approachingShape = new ApproachingShape(-50, height / 2, [255, 110, 110]);
+    sceneChangeTime = millis();
+  } else if (currScene === 3) {
+    rectMode(CORNER);
+    xPos = windowWidth / 2;
+    sceneChangeTime = millis();
+  }
+
+  sceneRunning = true;
+}
+
+function transitionToScene(newScene) {
+  currScene = newScene;
+  sceneRunning = false;
+
+  // Reset variables based on which scene we're transitioning from
+  if (newScene === 2) {
+    shyShapes = [];
+  } else if (newScene === 3) {
+    actNum = 1;
+    isNextToShy = false;
+  } else if (newScene === 1) {
+    isBehindCurtain = false;
+    isPeeking = false;
+  }
+
+  sceneChangeTime = 0;
+}
+
+function drawScene1() {
+  console.log("in scene 1");
+
+  background(240, 245, 255); // Pastel blue
+
+  for (let shape of shyShapes) {
+    shape.update();
+    shape.display();
+  }
+
+  // Switch to Scene 2
+  if (millis() - sceneChangeTime > sceneDuration.scene1) {
+    transitionToScene(2);
+    console.log("switching to scene 2");
+  }
+}
+
+function drawScene2() {
+  console.log("in scene 2");
+
+  if (actNum < 9) {
     background(240, 245, 255); // Pastel blue
+  }
 
-    for (let shape of shyShapes) {
-      shape.update();
-      shape.display();
-    }
+  // Handle animation cycles
+  if (actNum === 1) {
+    console.log("act 1 now");
+    moveTowardState(shyShape, approachingShape);
+  } else if (actNum === 2) {
+    console.log("act 2 now");
+    moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 3) {
+    console.log("act 3 now");
+    moveTowardState(shyShape, approachingShape);
+  } else if (actNum === 4) {
+    console.log("act 4 now");
+    moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 5) {
+    console.log("act 5 now");
+    moveTowardState(shyShape, approachingShape);
+  } else if (actNum === 6) {
+    console.log("act 6 now");
+    moveAwayState(shyShape, approachingShape);
+  } else if (actNum === 7) {
+    console.log("act 7 now");
+    moveTowardState(shyShape, approachingShape);
+  }
 
-    // Switch to Scene 2
-    if (millis() - sceneChangeTime > sceneDuration.scene1) {
-      curr_scene = 2;
-      scene_running = false;
+  // Start scene change timer after act 7 is finished
+  if (actNum === 8 && millis() - pauseStartTime > pauseDurationNear) {
+    sceneChangeTime = millis();
+    actNum = 9;
+  }
 
-      // Reset variables
-      shyShapes = [];
-      sceneChangeTime = 0;
+  // Switch to Scene 1 after Scene 2 duration
+  if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
+    transitionToScene(3);
+    console.log("switching to scene 3");
+  }
+}
 
-      console.log("switching to scene 2");
-    }
-  } else if (curr_scene === 2) {
-    console.log("in scene 2");
+function drawScene3() {
+  console.log("in scene 3");
 
-    if (actNum < 9) {
-      background(240, 245, 255); // Pastel blue
-    }
+  background(50); // Gray
 
-    // Handle animation cycles
-    if (actNum === 1) {
-      console.log("act 1 now");
-      moveTowardState(shyShape, approachingShape);
-    } else if (actNum === 2) {
-      console.log("act 2 now");
-      moveAwayState(shyShape, approachingShape);
-    } else if (actNum === 3) {
-      console.log("act 3 now");
-      moveTowardState(shyShape, approachingShape);
-    } else if (actNum === 4) {
-      console.log("act 4 now");
-      moveAwayState(shyShape, approachingShape);
-    } else if (actNum === 5) {
-      console.log("act 5 now");
-      moveTowardState(shyShape, approachingShape);
-    } else if (actNum === 6) {
-      console.log("act 6 now");
-      moveAwayState(shyShape, approachingShape);
-    } else if (actNum === 7) {
-      console.log("act 7 now");
-      moveTowardState(shyShape, approachingShape);
-    }
+  drawStage();
+  updateShyShapePosition();
+  drawShyShape();
+  drawCurtains();
+  drawSpotlight();
 
-    // Start scene change timer after act 7 is finished
-    if (actNum === 8 && millis() - pauseStartTime > pauseDurationNear) {
-      sceneChangeTime = millis();
-      actNum = 9;
-    }
+  // Switch to Scene 1
+  if (millis() - sceneChangeTime > sceneDuration.scene3) {
+    transitionToScene(1);
+    console.log("switching to scene 1");
+  }
+}
 
-    // Switch to Scene 1 after Scene 2 duration
-    if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
-      curr_scene = 3;
-      scene_running = false;
+function drawStage() {
+  // Stage Floor
+  fill(92, 60, 0); // Brown
+  rect(0, windowHeight - 200, windowWidth, 200);
 
-      // Reset variables
-      actNum = 1;
-      isNextToShy = false;
-      sceneChangeTime = 0;
+  // Wooden Planks
+  stroke(80, 50, 0); // Darker brown
+  for (let i = 0; i < windowWidth; i += 50) {
+    line(i, windowHeight - 200, i, windowHeight);
+  }
+}
 
-      console.log("switching to scene 3");
-    }
-  } else if (curr_scene === 3) {
-    console.log("in scene 3");
+function updateShyShapePosition() {
+  let shyShapeX = xPos;
+  let shyShapeY = windowHeight - 225;
+  let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
 
-    background(50); // Gray
+  // Check curtain positions
+  checkCurtainPosition(shyShapeX);
 
-    console.log("mouseX:", mouseX);
+  // Handle peeking behavior
+  if (isPeeking) {
+    handlePeekingBehavior(shyShapeX, distance);
+  }
 
-    // Stage Floor
-    fill(92, 60, 0); // Brown
-    rect(0, windowHeight - 200, windowWidth, 200);
+  // Handle movement when not behind curtain and not peeking
+  if (!isBehindCurtain && !isPeeking) {
+    handleSpotlightMovement(shyShapeX, distance);
+  }
+}
 
-    // Wooden Planks
-    stroke(80, 50, 0); // Darker brown
-    for (let i = 0; i < windowWidth; i += 50) {
-      line(i, windowHeight - 200, i, windowHeight);
-    }
-
-    let shyShapeX = xPos;
-    let shyShapeY = windowHeight - 225;
-    let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
-
-    // Shy Shape is behind left curtain
-    if (shyShapeX < 75) {
-      console.log("behind left curtain");
-      isBehindCurtain = true;
-      if (millis() - peekTimer > peekDelay) {
-        isPeeking = true;
-      }
-    }
-    // Shy Shape is behind right curtain
-    else if (shyShapeX > windowWidth - 75) {
-      console.log("behind right curtain");
-      isBehindCurtain = true;
-      if (millis() - peekTimer > peekDelay) {
-        isPeeking = true;
-      }
-    }
-    // Shy Shape is not behind curtains anymore
-    else {
-      isBehindCurtain = false;
-      isPeeking = false;
-    }
-
-    // If the shy shape is peeking out
-    if (isPeeking) {
-      if (shyShapeX < windowWidth / 2) {
-        console.log("peeking out of left curtain");
-        xPos += 10;
-      } else {
-        console.log("peeking out of right curtain");
-        xPos -= 10;
-      }
-
-      // If the shy shape is in the spotlight, hide behind the curtain
-      if (distance < spotlightSize / 2 + shyShapeSize / 2) {
-        if (shyShapeX < windowWidth / 2) {
-          console.log("going back in left curtain");
-          xPos -= 10;
-        } else {
-          console.log("going back in right curtain");
-          xPos += 10;
-        }
-
-        isBehindCurtain = true;
-        isPeeking = false;
-        peekTimer = millis();
-      }
-    }
-
-    // Move if majority of the spotlight is on the shy shape and it's not peeking
-    if (!isBehindCurtain && !isPeeking) {
-      if (!(mouseX < 100 || mouseX > windowWidth - 100)) {
-        if (distance < spotlightSize / 2 + shyShapeSize / 2) {
-          let overlapRatio =
-            (spotlightSize / 2 + shyShapeSize / 2 - distance) /
-            (spotlightSize / 2);
-          if (overlapRatio > 0.5) {
-            if (mouseX < shyShapeX) {
-              xPos += moveSpeed; // Move right
-            } else {
-              xPos -= moveSpeed; // Move left
-            }
-          }
-        }
-      } else {
-        console.log("spotlight on curtain");
-      }
-    }
-
-    // Shy Shape
-    noStroke();
-    fill(150, 180, 255); // Soft blue
-    ellipse(xPos, windowHeight - 225, shyShapeSize, shyShapeSize);
-
-    // Curtains
-    noStroke();
-    fill(200, 0, 0); // Red
-    rect(0, 0, 100, windowHeight - 200); // Left curtain
-    rect(windowWidth - 100, 0, 100, windowHeight - 200); // Right curtain
-
-    // Dim Lights
-    noStroke();
-    fill(0, 100);
-    rect(0, 0, windowWidth, windowHeight);
-
-    // Spotlight
-    fill(200, 200, 150, 70);
-    ellipse(mouseX, mouseY, spotlightSize, spotlightSize);
-
-    // Switch to Scene 1
-    if (millis() - sceneChangeTime > sceneDuration.scene3) {
-      curr_scene = 1;
-      scene_running = false;
-
-      // Reset variables
-      isBehindCurtain = false;
-      isPeeking = false;
-
-      console.log("switching to scene 1");
+function checkCurtainPosition(shyShapeX) {
+  // Shy Shape is behind left curtain
+  if (shyShapeX < 75) {
+    console.log("behind left curtain");
+    isBehindCurtain = true;
+    if (millis() - peekTimer > peekDelay) {
+      isPeeking = true;
     }
   }
+  // Shy Shape is behind right curtain
+  else if (shyShapeX > windowWidth - 75) {
+    console.log("behind right curtain");
+    isBehindCurtain = true;
+    if (millis() - peekTimer > peekDelay) {
+      isPeeking = true;
+    }
+  }
+  // Shy Shape is not behind curtains anymore
+  else {
+    isBehindCurtain = false;
+    isPeeking = false;
+  }
+}
+
+function handlePeekingBehavior(shyShapeX, distance) {
+  if (shyShapeX < windowWidth / 2) {
+    console.log("peeking out of left curtain");
+    xPos += 10;
+  } else {
+    console.log("peeking out of right curtain");
+    xPos -= 10;
+  }
+
+  // If the shy shape is in the spotlight, hide behind the curtain
+  if (distance < spotlightSize / 2 + shyShapeSize / 2) {
+    if (shyShapeX < windowWidth / 2) {
+      console.log("going back in left curtain");
+      xPos -= 10;
+    } else {
+      console.log("going back in right curtain");
+      xPos += 10;
+    }
+
+    isBehindCurtain = true;
+    isPeeking = false;
+    peekTimer = millis();
+  }
+}
+
+function handleSpotlightMovement(shyShapeX, distance) {
+  if (!(mouseX < 100 || mouseX > windowWidth - 100)) {
+    if (distance < spotlightSize / 2 + shyShapeSize / 2) {
+      let overlapRatio =
+        (spotlightSize / 2 + shyShapeSize / 2 - distance) / (spotlightSize / 2);
+      if (overlapRatio > 0.5) {
+        if (mouseX < shyShapeX) {
+          xPos += moveSpeed; // Move right
+        } else {
+          xPos -= moveSpeed; // Move left
+        }
+      }
+    }
+  } else {
+    console.log("spotlight on curtain");
+  }
+}
+
+function drawShyShape() {
+  noStroke();
+  fill(150, 180, 255); // Soft blue
+  ellipse(xPos, windowHeight - 225, shyShapeSize, shyShapeSize);
+}
+
+function drawCurtains() {
+  noStroke();
+  fill(200, 0, 0); // Red
+  rect(0, 0, 100, windowHeight - 200); // Left curtain
+  rect(windowWidth - 100, 0, 100, windowHeight - 200); // Right curtain
+
+  // Dim Lights
+  noStroke();
+  fill(0, 100);
+  rect(0, 0, windowWidth, windowHeight);
+}
+
+function drawSpotlight() {
+  fill(200, 200, 150, 70);
+  ellipse(mouseX, mouseY, spotlightSize, spotlightSize);
 }
 
 class ShyShapeScene1 {
