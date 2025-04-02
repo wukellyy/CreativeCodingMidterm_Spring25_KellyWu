@@ -30,7 +30,7 @@ let peekDelay = 3500;
 let isPeeking = false;
 
 // Scene control variables
-let currScene = 1;
+let currScene = 3;
 let sceneChangeTime = 0;
 let sceneDuration = { scene1: 15000, scene2: 2000, scene3: 60000 };
 let sceneRunning = false;
@@ -467,11 +467,17 @@ function drawScene3() {
   updateShyShapePosition();
   drawShyShape();
   drawCurtains();
+
+  // Dim Lights
+  noStroke();
+  fill(0, 100);
+  rect(0, 0, width, height);
+
   drawSpotlight();
 
   // Switch to Scene 1
   if (millis() - sceneChangeTime > sceneDuration.scene3) {
-    transitionToScene(1);
+    // transitionToScene(1);
     console.log("switching to scene 1");
   }
 }
@@ -579,15 +585,30 @@ function drawShyShape() {
 }
 
 function drawCurtains() {
-  noStroke();
-  fill(200, 0, 0); // Red
-  rect(0, 0, 100, height - 200); // Left curtain
-  rect(width - 100, 0, 100, height - 200); // Right curtain
+  drawCurtain(0, 0, 100, height - 200); // Left curtain
+  drawCurtain(width - 100, 0, 100, height - 200); // Right curtain
+}
 
-  // Dim Lights
+function drawCurtain(x, y, w, h) {
   noStroke();
-  fill(0, 100);
-  rect(0, 0, width, height);
+
+  push();
+  translate(x, y);
+
+  // Draw curtain with red gradient
+  for (let i = 0; i < w; i++) {
+    // Calculate shade from left (darker) to right (lighter)
+    let darkness = map(i, 0, w, 40, 0);
+    fill(200 - darkness, 0, 0);
+    rect(i, 0, 1, h);
+  }
+
+  // Add ripples for details
+  fill(160, 0, 0); // Darker red
+  rect(w * 0.3, 0, 8, h); // Left fold
+  rect(w * 0.6, 0, 8, h); // Right fold
+
+  pop();
 }
 
 function drawSpotlight() {
