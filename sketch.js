@@ -1,5 +1,14 @@
 // Scene 1 variables
 let shyShapes = [];
+let blueR = 150;
+let blueG = 180;
+let blueB = 255;
+let pinkR = 255;
+let pinkG = 150;
+let pinkB = 180;
+let bgR = 240;
+let bgG = 245;
+let bgB = 255;
 
 // Scene 2 variables
 let shyShape;
@@ -47,6 +56,7 @@ function draw() {
 function initializeScene() {
   // Handle initialization for the running scene
   rectMode(CENTER);
+
   if (currScene === 1) {
     // Create multiple shy shapes
     for (let i = 0; i < 50; i++) {
@@ -59,7 +69,7 @@ function initializeScene() {
     sceneChangeTime = millis();
   } else if (currScene === 3) {
     rectMode(CORNER);
-    xPos = windowWidth / 2;
+    xPos = width / 2;
     sceneChangeTime = millis();
   }
 
@@ -87,7 +97,46 @@ function transitionToScene(newScene) {
 function drawScene1() {
   console.log("in scene 1");
 
-  background(240, 245, 255); // Pastel blue
+  let blushing = false; // Check if any shy shape is blushing
+
+  for (let shape of shyShapes) {
+    if (shape.isBlushing) {
+      blushing = true;
+      break;
+    }
+  }
+
+  // Define target background colors
+  // Soft blue if cursor is far; blushing pink if cursor is near
+  let targetR = blushing ? 255 : 240;
+  let targetG = blushing ? 245 : 245;
+  let targetB = blushing ? 255 : 255;
+
+  // Transition background RGB values
+  let transitionSpeed = 0.5;
+
+  if (bgR < targetR) {
+    bgR += transitionSpeed;
+  }
+  if (bgR > targetR) {
+    bgR -= transitionSpeed;
+  }
+
+  if (bgG < targetG) {
+    bgG += transitionSpeed;
+  }
+  if (bgG > targetG) {
+    bgG -= transitionSpeed;
+  }
+
+  if (bgB < targetB) {
+    bgB += transitionSpeed;
+  }
+  if (bgB > targetB) {
+    bgB -= transitionSpeed;
+  }
+
+  background(bgR, bgG, bgB);
 
   for (let shape of shyShapes) {
     shape.update();
@@ -101,6 +150,68 @@ function drawScene1() {
   }
 }
 
+class ShyShapeScene1 {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = random(10, 30);
+    this.opacity = 255;
+    this.isBlushing = false;
+  }
+
+  update() {
+    // Calculate the distance between cursor and shy shape
+    let d = dist(mouseX, mouseY, this.x, this.y);
+
+    // If cursor is close, shy away (reduce size and decrease opacity)
+    if (d < 40) {
+      this.isBlushing = true;
+
+      if (this.size > 5) {
+        this.size -= 0.3;
+      }
+      if (this.opacity > 50) {
+        this.opacity -= 4;
+      }
+    }
+    // If cursor is far, slowly come out of shell (grow and increase opacity)
+    else {
+      this.isBlushing = false;
+
+      if (this.size < 30) {
+        this.size += 0.2;
+      }
+      if (this.opacity < 255) {
+        this.opacity += 2;
+      }
+    }
+  }
+
+  display() {
+    // Calculate the distance between cursor and shy shape
+    let d = dist(mouseX, mouseY, this.x, this.y);
+
+    // Determine the blend between blue (t = 0) and pink (t = 1)
+    let t = (40 - d) / 40;
+    // If too far, stay blue
+    if (t < 0) {
+      t = 0;
+    }
+    // If very close, full pink
+    if (t > 1) {
+      t = 1;
+    }
+
+    let r = blueR + t * (pinkR - blueR);
+    let g = blueG + t * (pinkG - blueG);
+    let b = blueB + t * (pinkB - blueB);
+
+    fill(r, g, b, this.opacity);
+    noStroke();
+    ellipse(this.x, this.y, this.size);
+  }
+}
+
 function drawScene2() {
   console.log("in scene 2");
 
@@ -110,25 +221,25 @@ function drawScene2() {
 
   // Handle animation cycles
   if (actNum === 1) {
-    console.log("act 1 now");
+    // console.log("act 1 now");
     moveTowardState(shyShape, approachingShape);
   } else if (actNum === 2) {
-    console.log("act 2 now");
+    // console.log("act 2 now");
     moveAwayState(shyShape, approachingShape);
   } else if (actNum === 3) {
-    console.log("act 3 now");
+    // console.log("act 3 now");
     moveTowardState(shyShape, approachingShape);
   } else if (actNum === 4) {
-    console.log("act 4 now");
+    // console.log("act 4 now");
     moveAwayState(shyShape, approachingShape);
   } else if (actNum === 5) {
-    console.log("act 5 now");
+    // console.log("act 5 now");
     moveTowardState(shyShape, approachingShape);
   } else if (actNum === 6) {
-    console.log("act 6 now");
+    // console.log("act 6 now");
     moveAwayState(shyShape, approachingShape);
   } else if (actNum === 7) {
-    console.log("act 7 now");
+    // console.log("act 7 now");
     moveTowardState(shyShape, approachingShape);
   }
 
@@ -142,184 +253,6 @@ function drawScene2() {
   if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
     transitionToScene(3);
     console.log("switching to scene 3");
-  }
-}
-
-function drawScene3() {
-  console.log("in scene 3");
-
-  background(50); // Gray
-
-  drawStage();
-  updateShyShapePosition();
-  drawShyShape();
-  drawCurtains();
-  drawSpotlight();
-
-  // Switch to Scene 1
-  if (millis() - sceneChangeTime > sceneDuration.scene3) {
-    transitionToScene(1);
-    console.log("switching to scene 1");
-  }
-}
-
-function drawStage() {
-  // Stage Floor
-  fill(92, 60, 0); // Brown
-  rect(0, windowHeight - 200, windowWidth, 200);
-
-  // Wooden Planks
-  stroke(80, 50, 0); // Darker brown
-  for (let i = 0; i < windowWidth; i += 50) {
-    line(i, windowHeight - 200, i, windowHeight);
-  }
-}
-
-function updateShyShapePosition() {
-  let shyShapeX = xPos;
-  let shyShapeY = windowHeight - 225;
-  let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
-
-  // Check curtain positions
-  checkCurtainPosition(shyShapeX);
-
-  // Handle peeking behavior
-  if (isPeeking) {
-    handlePeekingBehavior(shyShapeX, distance);
-  }
-
-  // Handle movement when not behind curtain and not peeking
-  if (!isBehindCurtain && !isPeeking) {
-    handleSpotlightMovement(shyShapeX, distance);
-  }
-}
-
-function checkCurtainPosition(shyShapeX) {
-  // Shy Shape is behind left curtain
-  if (shyShapeX < 75) {
-    console.log("behind left curtain");
-    isBehindCurtain = true;
-    if (millis() - peekTimer > peekDelay) {
-      isPeeking = true;
-    }
-  }
-  // Shy Shape is behind right curtain
-  else if (shyShapeX > windowWidth - 75) {
-    console.log("behind right curtain");
-    isBehindCurtain = true;
-    if (millis() - peekTimer > peekDelay) {
-      isPeeking = true;
-    }
-  }
-  // Shy Shape is not behind curtains anymore
-  else {
-    isBehindCurtain = false;
-    isPeeking = false;
-  }
-}
-
-function handlePeekingBehavior(shyShapeX, distance) {
-  if (shyShapeX < windowWidth / 2) {
-    console.log("peeking out of left curtain");
-    xPos += 10;
-  } else {
-    console.log("peeking out of right curtain");
-    xPos -= 10;
-  }
-
-  // If the shy shape is in the spotlight, hide behind the curtain
-  if (distance < spotlightSize / 2 + shyShapeSize / 2) {
-    if (shyShapeX < windowWidth / 2) {
-      console.log("going back in left curtain");
-      xPos -= 10;
-    } else {
-      console.log("going back in right curtain");
-      xPos += 10;
-    }
-
-    isBehindCurtain = true;
-    isPeeking = false;
-    peekTimer = millis();
-  }
-}
-
-function handleSpotlightMovement(shyShapeX, distance) {
-  if (!(mouseX < 100 || mouseX > windowWidth - 100)) {
-    if (distance < spotlightSize / 2 + shyShapeSize / 2) {
-      let overlapRatio =
-        (spotlightSize / 2 + shyShapeSize / 2 - distance) / (spotlightSize / 2);
-      if (overlapRatio > 0.5) {
-        if (mouseX < shyShapeX) {
-          xPos += moveSpeed; // Move right
-        } else {
-          xPos -= moveSpeed; // Move left
-        }
-      }
-    }
-  } else {
-    console.log("spotlight on curtain");
-  }
-}
-
-function drawShyShape() {
-  noStroke();
-  fill(150, 180, 255); // Soft blue
-  ellipse(xPos, windowHeight - 225, shyShapeSize, shyShapeSize);
-}
-
-function drawCurtains() {
-  noStroke();
-  fill(200, 0, 0); // Red
-  rect(0, 0, 100, windowHeight - 200); // Left curtain
-  rect(windowWidth - 100, 0, 100, windowHeight - 200); // Right curtain
-
-  // Dim Lights
-  noStroke();
-  fill(0, 100);
-  rect(0, 0, windowWidth, windowHeight);
-}
-
-function drawSpotlight() {
-  fill(200, 200, 150, 70);
-  ellipse(mouseX, mouseY, spotlightSize, spotlightSize);
-}
-
-class ShyShapeScene1 {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.size = random(10, 30);
-    this.opacity = 255;
-  }
-
-  update() {
-    // Calculate the distance between cursor and shy shape
-    let d = dist(mouseX, mouseY, this.x, this.y);
-
-    // If cursor is close, shy away (reduce size and decrease opacity)
-    if (d < 40) {
-      if (this.size > 5) {
-        this.size -= 0.5;
-      }
-      if (this.opacity > 50) {
-        this.opacity -= 5;
-      }
-    }
-    // If cursor is far, slowly come out of shell (grow and increase opacity)
-    else {
-      if (this.size < 30) {
-        this.size += 0.2;
-      }
-      if (this.opacity < 255) {
-        this.opacity += 2;
-      }
-    }
-  }
-
-  display() {
-    fill(150, 180, 255, this.opacity); // Soft blue
-    noStroke();
-    ellipse(this.x, this.y, this.size);
   }
 }
 
@@ -387,8 +320,8 @@ class ShyShapeScene2 {
 
   update(other) {
     let d = dist(other.x, other.y, this.x, this.y);
-    console.log("comfortLevel:", other.comfortLevel);
-    console.log("this.hasJumped:", this.hasJumped);
+    // console.log("comfortLevel:", other.comfortLevel);
+    // console.log("this.hasJumped:", this.hasJumped);
 
     // If shy shape is comfortable with this approaching shape, it remains in a normal state
     if (other.comfortLevel >= 4) {
@@ -476,7 +409,7 @@ class ApproachingShape {
   }
 
   moveToward(target) {
-    console.log("moving towards shy shape");
+    // console.log("moving towards shy shape");
 
     if (this.x < target.x - 70) {
       this.x += this.speed;
@@ -507,7 +440,7 @@ class ApproachingShape {
   }
 
   moveAway() {
-    console.log("moving away shy shape");
+    // console.log("moving away shy shape");
 
     if (this.x > -50) {
       this.x -= this.speed;
@@ -523,4 +456,141 @@ class ApproachingShape {
     noStroke();
     rect(this.x, this.y + this.jumpOffset, this.size, this.size);
   }
+}
+
+function drawScene3() {
+  console.log("in scene 3");
+
+  background(50); // Gray
+
+  drawStage();
+  updateShyShapePosition();
+  drawShyShape();
+  drawCurtains();
+  drawSpotlight();
+
+  // Switch to Scene 1
+  if (millis() - sceneChangeTime > sceneDuration.scene3) {
+    transitionToScene(1);
+    console.log("switching to scene 1");
+  }
+}
+
+function drawStage() {
+  // Stage Floor
+  fill(92, 60, 0); // Brown
+  rect(0, height - 200, width, 200);
+
+  // Wooden Planks
+  stroke(80, 50, 0); // Darker brown
+  for (let i = 0; i < width; i += 50) {
+    line(i, height - 200, i, height);
+  }
+}
+
+function updateShyShapePosition() {
+  let shyShapeX = xPos;
+  let shyShapeY = height - 225;
+  let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
+
+  checkCurtainPosition(shyShapeX);
+
+  if (isPeeking) {
+    handlePeekingBehavior(shyShapeX, distance);
+  }
+
+  // Handle movement when not behind curtain and not peeking
+  if (!isBehindCurtain && !isPeeking) {
+    handleSpotlightMovement(shyShapeX, distance);
+  }
+}
+
+function checkCurtainPosition(shyShapeX) {
+  // Shy Shape is behind left curtain
+  if (shyShapeX < 75) {
+    // console.log("behind left curtain");
+    isBehindCurtain = true;
+    if (millis() - peekTimer > peekDelay) {
+      isPeeking = true;
+    }
+  }
+  // Shy Shape is behind right curtain
+  else if (shyShapeX > width - 75) {
+    // console.log("behind right curtain");
+    isBehindCurtain = true;
+    if (millis() - peekTimer > peekDelay) {
+      isPeeking = true;
+    }
+  }
+  // Shy Shape is not behind curtains anymore
+  else {
+    isBehindCurtain = false;
+    isPeeking = false;
+  }
+}
+
+function handlePeekingBehavior(shyShapeX, distance) {
+  if (shyShapeX < width / 2) {
+    // console.log("peeking out of left curtain");
+    xPos += 10;
+  } else {
+    // console.log("peeking out of right curtain");
+    xPos -= 10;
+  }
+
+  // If the shy shape is in the spotlight, hide behind the curtain
+  if (distance < spotlightSize / 2 + shyShapeSize / 2) {
+    if (shyShapeX < width / 2) {
+      // console.log("going back in left curtain");
+      xPos -= 10;
+    } else {
+      // console.log("going back in right curtain");
+      xPos += 10;
+    }
+
+    isBehindCurtain = true;
+    isPeeking = false;
+    peekTimer = millis();
+  }
+}
+
+function handleSpotlightMovement(shyShapeX, distance) {
+  if (!(mouseX < 100 || mouseX > width - 100)) {
+    if (distance < spotlightSize / 2 + shyShapeSize / 2) {
+      let overlapRatio =
+        (spotlightSize / 2 + shyShapeSize / 2 - distance) / (spotlightSize / 2);
+      if (overlapRatio > 0.5) {
+        if (mouseX < shyShapeX) {
+          xPos += moveSpeed; // Move right
+        } else {
+          xPos -= moveSpeed; // Move left
+        }
+      }
+    }
+  } else {
+    // console.log("spotlight on curtain");
+  }
+}
+
+function drawShyShape() {
+  noStroke();
+  fill(150, 180, 255); // Soft blue
+  ellipse(xPos, height - 225, shyShapeSize, shyShapeSize);
+}
+
+function drawCurtains() {
+  noStroke();
+  fill(200, 0, 0); // Red
+  rect(0, 0, 100, height - 200); // Left curtain
+  rect(width - 100, 0, 100, height - 200); // Right curtain
+
+  // Dim Lights
+  noStroke();
+  fill(0, 100);
+  rect(0, 0, width, height);
+}
+
+function drawSpotlight() {
+  fill(200, 200, 150, 70);
+  ellipse(mouseX, mouseY, spotlightSize, spotlightSize);
 }
