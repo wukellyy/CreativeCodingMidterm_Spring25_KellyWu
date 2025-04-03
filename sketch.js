@@ -29,6 +29,15 @@ let peekTimer = 0;
 let peekDelay = 3500;
 let isPeeking = false;
 
+let stageFloorY;
+let audience = [];
+let audienceRows = 7;
+let audienceCols = 25;
+let stageHeight = 150;
+let headSize = 20;
+let bodyWidth = 25;
+let bodyHeight = 35;
+
 // Scene control variables
 let currScene = 3;
 let sceneChangeTime = 0;
@@ -70,6 +79,10 @@ function initializeScene() {
   } else if (currScene === 3) {
     rectMode(CORNER);
     xPos = width / 2;
+
+    stageFloorY = height * 0.75;
+    createAudience();
+
     sceneChangeTime = millis();
   }
 
@@ -458,6 +471,28 @@ class ApproachingShape {
   }
 }
 
+function createAudience() {
+  audience = [];
+  const seatPadding = 30;
+  const rowPadding = 20;
+  const personWidth = bodyWidth;
+  const personHeight = headSize + bodyHeight;
+
+  // Calculate total audience width and starting position
+  const totalAudienceWidth =
+    audienceCols * personWidth + (audienceCols - 1) * seatPadding;
+  const startX = (width - totalAudienceWidth) / 2;
+  const startY = stageFloorY - 50;
+
+  for (let row = 0; row < audienceRows; row++) {
+    for (let col = 0; col < audienceCols; col++) {
+      const x = startX + col * (personWidth + seatPadding);
+      const y = startY + row * (personHeight + rowPadding);
+      audience.push(new AudienceMember(x, y));
+    }
+  }
+}
+
 function drawScene3() {
   console.log("in scene 3");
 
@@ -467,12 +502,8 @@ function drawScene3() {
   updateShyShapePosition();
   drawShyShape();
   drawCurtains();
-
-  // Dim Lights
-  noStroke();
-  fill(0, 100);
-  rect(0, 0, width, height);
-
+  drawAudience();
+  drawDimLights();
   drawSpotlight();
 
   // Switch to Scene 1
@@ -485,18 +516,18 @@ function drawScene3() {
 function drawStage() {
   // Stage Floor
   fill(92, 60, 0); // Brown
-  rect(0, height - 200, width, 200);
+  rect(0, stageFloorY - stageHeight, width, stageHeight);
 
   // Wooden Planks
   stroke(80, 50, 0); // Darker brown
   for (let i = 0; i < width; i += 50) {
-    line(i, height - 200, i, height);
+    line(i, stageFloorY - stageHeight, i, stageFloorY);
   }
 }
 
 function updateShyShapePosition() {
   let shyShapeX = xPos;
-  let shyShapeY = height - 225;
+  let shyShapeY = stageFloorY - stageHeight - 25;
   let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
 
   checkCurtainPosition(shyShapeX);
@@ -581,12 +612,12 @@ function handleSpotlightMovement(shyShapeX, distance) {
 function drawShyShape() {
   noStroke();
   fill(150, 180, 255); // Soft blue
-  ellipse(xPos, height - 225, shyShapeSize, shyShapeSize);
+  ellipse(xPos, stageFloorY - stageHeight - 25, shyShapeSize, shyShapeSize);
 }
 
 function drawCurtains() {
-  drawCurtain(0, 0, 100, height - 200); // Left curtain
-  drawCurtain(width - 100, 0, 100, height - 200); // Right curtain
+  drawCurtain(0, 0, 100, stageFloorY - stageHeight); // Left curtain
+  drawCurtain(width - 100, 0, 100, stageFloorY - stageHeight); // Right curtain
 }
 
 function drawCurtain(x, y, w, h) {
@@ -611,7 +642,58 @@ function drawCurtain(x, y, w, h) {
   pop();
 }
 
+function drawAudience() {
+  for (let member of audience) {
+    member.update();
+    member.display();
+  }
+}
+
+function drawDimLights() {
+  noStroke();
+  fill(0, 100);
+  rect(0, 0, width, height);
+}
+
 function drawSpotlight() {
   fill(200, 200, 150, 70);
   ellipse(mouseX, mouseY, spotlightSize, spotlightSize);
+}
+
+class AudienceMember {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.headSize = headSize;
+    this.bodyWidth = bodyWidth;
+    this.bodyHeight = bodyHeight;
+    this.cheering = false;
+    this.cheerTimer = 0;
+  }
+
+  display() {
+    // Body
+    fill(this.cheering ? 255 : 200);
+    rect(this.x, this.y, this.bodyWidth, this.bodyHeight);
+
+    // Head
+    fill(this.cheering ? 255 : 230);
+    ellipse(
+      this.x + this.bodyWidth / 2,
+      this.y - this.headSize / 2,
+      this.headSize
+    );
+  }
+
+  cheer() {
+    // TO DO: want audience to cheer after the shy shape is behind the curtains 4 times
+    this.cheering = true;
+    this.cheerTimer = millis();
+  }
+
+  update() {
+    if (this.cheering && millis() - this.cheerTimer > 1000) {
+      this.cheering = false;
+    }
+  }
 }
