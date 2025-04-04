@@ -38,6 +38,10 @@ let headSize = 20;
 let bodyWidth = 25;
 let bodyHeight = 35;
 
+let peekCount = 0;
+let lastPeekTime = 0;
+let isAudienceCheering = false;
+
 // Scene control variables
 let currScene = 3;
 let sceneChangeTime = 0;
@@ -545,17 +549,23 @@ function updateShyShapePosition() {
 function checkCurtainPosition(shyShapeX) {
   // Shy Shape is behind left curtain
   if (shyShapeX < 75) {
-    // console.log("behind left curtain");
     isBehindCurtain = true;
     if (millis() - peekTimer > peekDelay) {
+      if (!isPeeking) {
+        peekCount++;
+        lastPeekTime = millis();
+      }
       isPeeking = true;
     }
   }
   // Shy Shape is behind right curtain
   else if (shyShapeX > width - 75) {
-    // console.log("behind right curtain");
     isBehindCurtain = true;
     if (millis() - peekTimer > peekDelay) {
+      if (!isPeeking) {
+        peekCount++;
+        lastPeekTime = millis();
+      }
       isPeeking = true;
     }
   }
@@ -563,6 +573,15 @@ function checkCurtainPosition(shyShapeX) {
   else {
     isBehindCurtain = false;
     isPeeking = false;
+  }
+
+  // Check if we've reached 4 peeks and it's been less than 5 seconds since last peek
+  if (peekCount >= 4 && millis() - lastPeekTime < 5000) {
+    isAudienceCheering = true;
+  } else if (millis() - lastPeekTime > 5000) {
+    // Reset if too much time passes between peeks
+    peekCount = 0;
+    isAudienceCheering = false;
   }
 }
 
@@ -664,27 +683,51 @@ class AudienceMember {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+    this.baseY = y;
     this.headSize = headSize;
     this.bodyWidth = bodyWidth;
     this.bodyHeight = bodyHeight;
     this.cheering = false;
     this.cheerTimer = 0;
+    this.cheerOffset = 0;
+    this.cheerRotation = 0;
+    this.cheerDirection = random([-1, 1]);
+    this.rotationSpeed = random([0.0005, 0.0007, 0.002]);
+    this.maxRotation = 0.07;
+    this.cheerDuration = 20000;
   }
 
   display() {
+    push();
+
+    if (this.cheering) {
+      translate(this.x + this.bodyWidth / 2, this.baseY + this.bodyHeight / 2);
+      rotate(this.cheerRotation);
+      translate(
+        -(this.x + this.bodyWidth / 2),
+        -(this.baseY + this.bodyHeight / 2)
+      );
+    }
+
     // Body
     fill(this.cheering ? 255 : 200);
-    rect(this.x, this.y, this.bodyWidth, this.bodyHeight);
+    rect(
+      this.x,
+      this.baseY + this.cheerOffset,
+      this.bodyWidth,
+      this.bodyHeight
+    );
 
     // Head
     fill(this.cheering ? 255 : 230);
     ellipse(
       this.x + this.bodyWidth / 2,
-      this.y - this.headSize / 2,
+      this.baseY - this.headSize / 2 + this.cheerOffset,
       this.headSize
     );
 
-    // Seat
+    pop();
+
     this.drawSeat();
   }
 
@@ -703,14 +746,31 @@ class AudienceMember {
   }
 
   cheer() {
-    // TO DO: want audience to cheer after the shy shape is behind the curtains 4 times
     this.cheering = true;
     this.cheerTimer = millis();
   }
 
   update() {
-    if (this.cheering && millis() - this.cheerTimer > 1000) {
-      this.cheering = false;
+    if (isAudienceCheering && !this.cheering) {
+      this.cheer();
+    }
+
+    if (this.cheering) {
+      // Jumping animation
+      this.cheerOffset = sin(frameCount * 0.2) * 5;
+
+      // Rotation animation with individual speeds
+      this.cheerRotation += this.cheerDirection * this.rotationSpeed;
+      if (abs(this.cheerRotation) > this.maxRotation) {
+        this.cheerDirection *= -1;
+      }
+
+      // Stop cheering after duration
+      if (millis() - this.cheerTimer > this.cheerDuration) {
+        this.cheering = false;
+        this.cheerOffset = 0;
+        this.cheerRotation = 0;
+      }
     }
   }
 }
