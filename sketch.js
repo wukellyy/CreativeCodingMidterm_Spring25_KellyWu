@@ -39,7 +39,6 @@ let bodyWidth = 25;
 let bodyHeight = 35;
 
 let peekCount = 0;
-let lastPeekTime = 0;
 let isAudienceCheering = false;
 
 // Scene control variables
@@ -112,7 +111,7 @@ function transitionToScene(newScene) {
 }
 
 function drawScene1() {
-  console.log("in scene 1");
+  // console.log("in scene 1");
 
   let blushing = false; // Check if any shy shape is blushing
 
@@ -163,7 +162,7 @@ function drawScene1() {
   // Switch to Scene 2
   if (millis() - sceneChangeTime > sceneDuration.scene1) {
     transitionToScene(2);
-    console.log("switching to scene 2");
+    // console.log("switching to scene 2");
   }
 }
 
@@ -230,7 +229,7 @@ class ShyShapeScene1 {
 }
 
 function drawScene2() {
-  console.log("in scene 2");
+  // console.log("in scene 2");
 
   if (actNum < 9) {
     background(240, 245, 255); // Pastel blue
@@ -269,7 +268,7 @@ function drawScene2() {
   // Switch to Scene 1 after Scene 2 duration
   if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
     transitionToScene(3);
-    console.log("switching to scene 3");
+    // console.log("switching to scene 3");
   }
 }
 
@@ -392,7 +391,7 @@ class ShyShapeScene2 {
     }
 
     if (isNextToShy === false) {
-      console.log("is next to shy");
+      // console.log("is next to shy");
       this.hasJumped = false;
     }
   }
@@ -478,7 +477,7 @@ class ApproachingShape {
 function createAudience() {
   audience = [];
   const seatPadding = 30;
-  const rowPadding = 20;
+  const rowPadding = 3;
   const personWidth = bodyWidth;
   const personHeight = headSize + bodyHeight;
 
@@ -498,7 +497,7 @@ function createAudience() {
 }
 
 function drawScene3() {
-  console.log("in scene 3");
+  // console.log("in scene 3");
 
   background(50); // Gray
 
@@ -513,7 +512,7 @@ function drawScene3() {
   // Switch to Scene 1
   if (millis() - sceneChangeTime > sceneDuration.scene3) {
     // transitionToScene(1);
-    console.log("switching to scene 1");
+    // console.log("switching to scene 1");
   }
 }
 
@@ -530,6 +529,18 @@ function drawStage() {
 }
 
 function updateShyShapePosition() {
+  // Shy shape returns back to the center of stage
+  if (peekCount >= 6) {
+    // Check if we're to the left or right of center
+    if (xPos < width / 2) {
+      xPos += moveSpeed; // Move right
+    } else if (xPos > width / 2) {
+      xPos -= moveSpeed; // Move left
+    }
+
+    return;
+  }
+
   let shyShapeX = xPos;
   let shyShapeY = stageFloorY - stageHeight - 25;
   let distance = dist(mouseX, mouseY, shyShapeX, shyShapeY);
@@ -547,13 +558,17 @@ function updateShyShapePosition() {
 }
 
 function checkCurtainPosition(shyShapeX) {
+  if (peekCount >= 6) {
+    return;
+  }
+
   // Shy Shape is behind left curtain
   if (shyShapeX < 75) {
     isBehindCurtain = true;
     if (millis() - peekTimer > peekDelay) {
       if (!isPeeking) {
         peekCount++;
-        lastPeekTime = millis();
+        console.log("Peek count:", peekCount);
       }
       isPeeking = true;
     }
@@ -564,7 +579,7 @@ function checkCurtainPosition(shyShapeX) {
     if (millis() - peekTimer > peekDelay) {
       if (!isPeeking) {
         peekCount++;
-        lastPeekTime = millis();
+        console.log("Peek count:", peekCount);
       }
       isPeeking = true;
     }
@@ -575,13 +590,9 @@ function checkCurtainPosition(shyShapeX) {
     isPeeking = false;
   }
 
-  // Check if we've reached 4 peeks and it's been less than 5 seconds since last peek
-  if (peekCount >= 4 && millis() - lastPeekTime < 5000) {
+  // Audience cheers when about to peek 3 times
+  if (peekCount === 6 - 1) {
     isAudienceCheering = true;
-  } else if (millis() - lastPeekTime > 5000) {
-    // Reset if too much time passes between peeks
-    peekCount = 0;
-    isAudienceCheering = false;
   }
 }
 
@@ -694,7 +705,7 @@ class AudienceMember {
     this.cheerDirection = random([-1, 1]);
     this.rotationSpeed = random([0.0005, 0.0007, 0.002]);
     this.maxRotation = 0.07;
-    this.cheerDuration = 20000;
+    this.cheerDuration = 5000;
   }
 
   display() {
