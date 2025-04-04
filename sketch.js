@@ -683,6 +683,23 @@ class AudienceMember {
       this.y - this.headSize / 2,
       this.headSize
     );
+
+    // Seat
+    this.drawSeat();
+  }
+
+  drawSeat() {
+    // Backrest
+    fill(200, 0, 0); // Red
+    rect(this.x - 5, this.y + 3, this.bodyWidth + 10, this.bodyHeight + 15, 10);
+
+    // Armrests
+    fill(120, 0, 0); // Darker red
+    let armrestWidth = 9.7;
+    let armrestHeight = 30;
+
+    rect(this.x - armrestWidth - 5, this.y + 20, armrestWidth, armrestHeight); // Left armrest
+    rect(this.x + this.bodyWidth + 5, this.y + 20, armrestWidth, armrestHeight); // Right armrest
   }
 
   cheer() {
