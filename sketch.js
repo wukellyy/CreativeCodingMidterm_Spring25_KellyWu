@@ -28,7 +28,6 @@ let isBehindCurtain = false;
 let peekTimer = 0;
 let peekDelay = 3500;
 let isPeeking = false;
-
 let stageFloorY;
 let audience = [];
 let audienceRows = 7;
@@ -37,15 +36,19 @@ let stageHeight = 150;
 let headSize = 20;
 let bodyWidth = 25;
 let bodyHeight = 35;
-
 let peekCount = 0;
 let isAudienceCheering = false;
 let lastPeekTime;
+let atCenter = false;
+let atCenterTime;
+let startJumping = false;
+let isJumpingUp = false;
+let shyShapeJumpOffset = 0;
 
 // Scene control variables
-let currScene = 3;
+let currScene = 1;
 let sceneChangeTime = 0;
-let sceneDuration = { scene1: 15000, scene2: 2000, scene3: 60000 };
+let sceneDuration = { scene1: 15000, scene2: 2000, scene3: 4000 };
 let sceneRunning = false;
 
 function setup() {
@@ -86,7 +89,6 @@ function initializeScene() {
 
     stageFloorY = height * 0.75;
     createAudience();
-
     sceneChangeTime = millis();
   }
 
@@ -106,6 +108,12 @@ function transitionToScene(newScene) {
   } else if (newScene === 1) {
     isBehindCurtain = false;
     isPeeking = false;
+    audience = [];
+    peekCount = 0;
+    isAudienceCheering = false;
+    atCenter = false;
+    startJumping = false;
+    isJumpingUp = false;
   }
 
   sceneChangeTime = 0;
@@ -503,6 +511,7 @@ function drawScene3() {
   background(50); // Gray
 
   drawStage();
+  drawFloor();
   updateShyShapePosition();
   drawShyShape();
   drawCurtains();
@@ -511,22 +520,27 @@ function drawScene3() {
   drawSpotlight();
 
   // Switch to Scene 1
-  if (millis() - sceneChangeTime > sceneDuration.scene3) {
-    // transitionToScene(1);
+  if (startJumping && millis() - sceneChangeTime > sceneDuration.scene3) {
+    transitionToScene(1);
     // console.log("switching to scene 1");
   }
 }
 
 function drawStage() {
-  // Stage Floor
+  // Stage Floor Wall
   fill(92, 60, 0); // Brown
   rect(0, stageFloorY - stageHeight, width, stageHeight);
 
-  // Wooden Planks
+  // Wooden Planks Details
   stroke(80, 50, 0); // Darker brown
   for (let i = 0; i < width; i += 50) {
     line(i, stageFloorY - stageHeight, i, stageFloorY);
   }
+}
+
+function drawFloor() {
+  fill(40);
+  rect(0, stageFloorY, width, height);
 }
 
 function updateShyShapePosition() {
@@ -543,6 +557,20 @@ function updateShyShapePosition() {
       xPos += moveSpeed - 3; // Move right
     } else if (xPos > width / 2) {
       xPos -= moveSpeed - 3; // Move left
+    } else {
+      if (atCenter) {
+        if (millis() - atCenterTime > 1000) {
+          if (!startJumping) {
+            isJumpingUp = true;
+            sceneChangeTime = millis();
+          }
+          startJumping = true;
+          shyShapeJump();
+        }
+      } else {
+        atCenter = true;
+        atCenterTime = millis();
+      }
     }
     return;
   }
@@ -560,6 +588,23 @@ function updateShyShapePosition() {
   // Handle movement when not behind curtain and not peeking
   if (!isBehindCurtain && !isPeeking) {
     handleSpotlightMovement(shyShapeX, distance);
+  }
+}
+
+function shyShapeJump() {
+  // Handle jump animation
+  if (isJumpingUp) {
+    shyShapeJumpOffset -= 2;
+    if (shyShapeJumpOffset <= -15) {
+      isJumpingUp = false;
+    }
+  } else if (shyShapeJumpOffset < 0) {
+    shyShapeJumpOffset += 2;
+    if (shyShapeJumpOffset >= 15) {
+      isJumpingUp = true;
+    }
+  } else {
+    isJumpingUp = true;
   }
 }
 
@@ -586,7 +631,7 @@ function checkCurtainPosition(shyShapeX) {
   else {
     if (isBehindCurtain) {
       peekCount++;
-      console.log("Peek count:", peekCount);
+      // console.log("Peek count:", peekCount);
       if (peekCount === 3) {
         lastPeekTime = millis(); // Record time of 3rd peek
         isAudienceCheering = true;
@@ -647,7 +692,41 @@ function handleSpotlightMovement(shyShapeX, distance) {
 function drawShyShape() {
   noStroke();
   fill(150, 180, 255); // Soft blue
-  ellipse(xPos, stageFloorY - stageHeight - 25, shyShapeSize, shyShapeSize);
+  ellipse(
+    xPos,
+    stageFloorY - stageHeight - 25 + shyShapeJumpOffset,
+    shyShapeSize,
+    shyShapeSize
+  );
+
+  // Once jumping and at center, shy shape sings
+  if (startJumping) {
+    drawMusicNotes();
+  }
+}
+
+function drawMusicNotes() {
+  stroke(80);
+  strokeWeight(2);
+  fill(80);
+
+  // Note 1
+  let note1X = xPos - 12;
+  let note1Y = stageFloorY - stageHeight - 60 + shyShapeJumpOffset;
+  ellipse(note1X, note1Y, 6, 6);
+  line(note1X + 3, note1Y, note1X + 3, note1Y - 15);
+
+  // Note 2
+  let note2X = xPos + 2;
+  let note2Y = stageFloorY - stageHeight - 70 + shyShapeJumpOffset;
+  ellipse(note2X, note2Y, 6, 6);
+  line(note2X + 3, note2Y, note2X + 3, note2Y - 15);
+
+  // Note 3
+  let note3X = xPos + 14;
+  let note3Y = stageFloorY - stageHeight - 65 + shyShapeJumpOffset;
+  ellipse(note3X, note3Y, 6, 6);
+  line(note3X + 3, note3Y, note3X + 3, note3Y - 15);
 }
 
 function drawCurtains() {
@@ -726,7 +805,7 @@ class AudienceMember {
     }
 
     // Body
-    fill(this.cheering ? 255 : 200);
+    fill(140);
     rect(
       this.x,
       this.baseY + this.cheerOffset,
@@ -735,7 +814,7 @@ class AudienceMember {
     );
 
     // Head
-    fill(this.cheering ? 255 : 230);
+    fill(170);
     ellipse(
       this.x + this.bodyWidth / 2,
       this.baseY - this.headSize / 2 + this.cheerOffset,
