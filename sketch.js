@@ -18,6 +18,7 @@ let isNextToShy = false;
 let pauseStartTime = 0;
 let pauseDurationNear = 3000;
 let pauseDurationAway = 3000;
+let bgBlush = false;
 
 // Scene 3 variables
 let xPos;
@@ -48,7 +49,7 @@ let shyShapeJumpOffset = 0;
 // Scene control variables
 let currScene = 1;
 let sceneChangeTime = 0;
-let sceneDuration = { scene1: 15000, scene2: 2000, scene3: 4000 };
+let sceneDuration = { scene1: 15000, scene2: 1000, scene3: 5000 };
 let sceneRunning = false;
 
 function setup() {
@@ -86,7 +87,6 @@ function initializeScene() {
   } else if (currScene === 3) {
     rectMode(CORNER);
     xPos = width / 2;
-
     stageFloorY = height * 0.75;
     createAudience();
     sceneChangeTime = millis();
@@ -105,6 +105,7 @@ function transitionToScene(newScene) {
   } else if (newScene === 3) {
     actNum = 1;
     isNextToShy = false;
+    bgBlush = false;
   } else if (newScene === 1) {
     isBehindCurtain = false;
     isPeeking = false;
@@ -114,6 +115,7 @@ function transitionToScene(newScene) {
     atCenter = false;
     startJumping = false;
     isJumpingUp = false;
+    shyShapeJumpOffset = 0;
   }
 
   sceneChangeTime = 0;
@@ -240,44 +242,32 @@ class ShyShapeScene1 {
 function drawScene2() {
   // console.log("in scene 2");
 
-  if (actNum < 9) {
-    background(240, 245, 255); // Pastel blue
-  }
+  // Define target background colors
+  let targetR = bgBlush ? 255 : 240;
+  let targetG = bgBlush ? 245 : 245;
+  let targetB = bgBlush ? 255 : 255;
+
+  let transitionSpeed = 0.5;
+  bgR += (targetR - bgR) * transitionSpeed * 0.1;
+  bgG += (targetG - bgG) * transitionSpeed * 0.1;
+  bgB += (targetB - bgB) * transitionSpeed * 0.1;
+
+  background(bgR, bgG, bgB);
 
   // Handle animation cycles
-  if (actNum === 1) {
-    // console.log("act 1 now");
+  if (actNum === 1 || actNum === 3 || actNum === 5 || actNum === 7) {
     moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 2) {
-    // console.log("act 2 now");
+  } else if (actNum === 2 || actNum === 4 || actNum === 6) {
     moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 3) {
-    // console.log("act 3 now");
-    moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 4) {
-    // console.log("act 4 now");
-    moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 5) {
-    // console.log("act 5 now");
-    moveTowardState(shyShape, approachingShape);
-  } else if (actNum === 6) {
-    // console.log("act 6 now");
-    moveAwayState(shyShape, approachingShape);
-  } else if (actNum === 7) {
-    // console.log("act 7 now");
-    moveTowardState(shyShape, approachingShape);
-  }
+  } else if (actNum === 8) {
+    shyShape.display();
+    approachingShape.display();
 
-  // Start scene change timer after act 7 is finished
-  if (actNum === 8 && millis() - pauseStartTime > pauseDurationNear) {
-    sceneChangeTime = millis();
-    actNum = 9;
-  }
-
-  // Switch to Scene 1 after Scene 2 duration
-  if (actNum === 9 && millis() - sceneChangeTime > sceneDuration.scene2) {
-    transitionToScene(3);
-    // console.log("switching to scene 3");
+    // Switch to Scene 3
+    if (millis() - sceneChangeTime > sceneDuration.scene2) {
+      transitionToScene(3);
+      // console.log("switching to scene 3");
+    }
   }
 }
 
@@ -323,8 +313,16 @@ function moveTowardState(shyShape, approachingShape) {
       actNum = 4;
     } else if (actNum === 5) {
       actNum = 6;
-    } else if (actNum === 7) {
+    }
+
+    if (
+      actNum === 7 &&
+      isNextToShy &&
+      millis() - pauseStartTime > pauseDurationNear
+    ) {
+      pauseStartTime = 0;
       actNum = 8;
+      sceneChangeTime = millis();
     }
   }
 }
@@ -336,6 +334,10 @@ class ShyShapeScene2 {
     this.size = 50;
     this.opacity = 255;
     this.shrinkStartTime = null;
+    this.r = 150;
+    this.g = 180;
+    this.b = 255;
+    this.isBlushing = false;
 
     // Jump variables
     this.jumpOffset = 0;
@@ -345,8 +347,7 @@ class ShyShapeScene2 {
 
   update(other) {
     let d = dist(other.x, other.y, this.x, this.y);
-    // console.log("comfortLevel:", other.comfortLevel);
-    // console.log("this.hasJumped:", this.hasJumped);
+    this.isBlushing = false;
 
     // If shy shape is comfortable with this approaching shape, it remains in a normal state
     if (other.comfortLevel >= 4) {
@@ -359,6 +360,8 @@ class ShyShapeScene2 {
     // If approaching shape gets close, shy shape shinks and decrease its opacity
     // The amount will depend on comfort level
     else if (d < 80) {
+      this.isBlushing = true;
+
       if (other.comfortLevel === 3) {
         if (!this.shrinkStartTime) {
           this.shrinkStartTime = millis();
@@ -366,11 +369,21 @@ class ShyShapeScene2 {
 
         // Shrink a bit then go back to normal
         if (millis() - this.shrinkStartTime < 400) {
-          if (this.size > 20) this.size -= 0.2;
-          if (this.opacity > 50) this.opacity -= 5;
+          if (this.size > 20) {
+            this.size -= 0.2;
+          }
+          if (this.opacity > 50) {
+            this.opacity -= 5;
+          }
         } else {
-          if (this.size < 50) this.size += 0.2;
-          if (this.opacity < 255) this.opacity += 5;
+          if (this.size < 50) {
+            this.size += 0.2;
+          }
+          if (this.opacity < 255) {
+            this.opacity += 5;
+          }
+
+          this.isBlushing = false;
 
           // Jump when returning to normal
           if (!this.hasJumped) {
@@ -379,15 +392,29 @@ class ShyShapeScene2 {
           }
         }
       } else {
-        if (this.size > 20) this.size -= 0.5;
-        if (this.opacity > 50) this.opacity -= 5;
+        if (this.size > 20) {
+          this.size -= 0.5;
+        }
+        if (this.opacity > 50) {
+          this.opacity -= 5;
+        }
       }
     }
     // If approaching shape is away, shy shape grows and increase its opacity
     else {
-      if (this.size < 50) this.size += 0.2;
-      if (this.opacity < 255) this.opacity += 2;
+      if (this.size < 50) {
+        this.size += 0.2;
+      }
+      if (this.opacity < 255) {
+        this.opacity += 2;
+      }
+
+      this.isBlushing = false;
     }
+
+    // Handle color change based on blushing state and distance
+    this.handleBlush(d);
+    bgBlush = this.isBlushing;
 
     // Handle Jump Animation
     if (this.jumpingUp) {
@@ -400,18 +427,44 @@ class ShyShapeScene2 {
     }
 
     if (isNextToShy === false) {
-      // console.log("is next to shy");
       this.hasJumped = false;
+    }
+  }
+
+  handleBlush(d) {
+    // Only blush when near and not comfortable yet
+    if (this.isBlushing) {
+      // Calculate blend factor t (0 = soft blue, 1 = blush pink)
+      let t = (40 - d) / 40;
+
+      if (t <= -0.05) {
+        t = 0;
+      }
+      if (t > -0.05) {
+        t = 1;
+      }
+
+      this.r = blueR + t * (pinkR - blueR);
+      this.g = blueG + t * (pinkG - blueG);
+      this.b = blueB + t * (pinkB - blueB);
+    } else {
+      this.r = 150;
+      this.g = 180;
+      this.b = 255;
     }
   }
 
   normalState() {
     this.size = 50;
     this.opacity = 255;
+    this.r = 150;
+    this.g = 180;
+    this.b = 255;
+    this.isBlushing = false;
   }
 
   display() {
-    fill(150, 180, 255, this.opacity); // Soft blue
+    fill(this.r, this.g, this.b, this.opacity);
     noStroke();
     ellipse(this.x, this.y + this.jumpOffset, this.size);
   }
