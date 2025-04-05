@@ -40,6 +40,7 @@ let bodyHeight = 35;
 
 let peekCount = 0;
 let isAudienceCheering = false;
+let lastPeekTime;
 
 // Scene control variables
 let currScene = 3;
@@ -529,15 +530,20 @@ function drawStage() {
 }
 
 function updateShyShapePosition() {
-  // Shy shape returns back to the center of stage
-  if (peekCount >= 6) {
-    // Check if we're to the left or right of center
-    if (xPos < width / 2) {
-      xPos += moveSpeed; // Move right
-    } else if (xPos > width / 2) {
-      xPos -= moveSpeed; // Move left
+  // After 3 peeks, ignore spotlight effect
+  if (peekCount >= 3) {
+    // Shy shape waits 5 seconds, seeing the cheering
+    if (millis() - lastPeekTime < 5000) {
+      isAudienceCheering = true;
+      return;
     }
 
+    // After 5 seconds, slowly return back to center
+    if (xPos < width / 2) {
+      xPos += moveSpeed - 3; // Move right
+    } else if (xPos > width / 2) {
+      xPos -= moveSpeed - 3; // Move left
+    }
     return;
   }
 
@@ -558,7 +564,7 @@ function updateShyShapePosition() {
 }
 
 function checkCurtainPosition(shyShapeX) {
-  if (peekCount >= 6) {
+  if (peekCount >= 3) {
     return;
   }
 
@@ -566,10 +572,6 @@ function checkCurtainPosition(shyShapeX) {
   if (shyShapeX < 75) {
     isBehindCurtain = true;
     if (millis() - peekTimer > peekDelay) {
-      if (!isPeeking) {
-        peekCount++;
-        console.log("Peek count:", peekCount);
-      }
       isPeeking = true;
     }
   }
@@ -577,22 +579,21 @@ function checkCurtainPosition(shyShapeX) {
   else if (shyShapeX > width - 75) {
     isBehindCurtain = true;
     if (millis() - peekTimer > peekDelay) {
-      if (!isPeeking) {
-        peekCount++;
-        console.log("Peek count:", peekCount);
-      }
       isPeeking = true;
     }
   }
   // Shy Shape is not behind curtains anymore
   else {
+    if (isBehindCurtain) {
+      peekCount++;
+      console.log("Peek count:", peekCount);
+      if (peekCount === 3) {
+        lastPeekTime = millis(); // Record time of 3rd peek
+        isAudienceCheering = true;
+      }
+    }
     isBehindCurtain = false;
     isPeeking = false;
-  }
-
-  // Audience cheers when about to peek 3 times
-  if (peekCount === 6 - 1) {
-    isAudienceCheering = true;
   }
 }
 
@@ -622,6 +623,10 @@ function handlePeekingBehavior(shyShapeX, distance) {
 }
 
 function handleSpotlightMovement(shyShapeX, distance) {
+  if (peekCount >= 3) {
+    return;
+  }
+
   if (!(mouseX < 100 || mouseX > width - 100)) {
     if (distance < spotlightSize / 2 + shyShapeSize / 2) {
       let overlapRatio =
